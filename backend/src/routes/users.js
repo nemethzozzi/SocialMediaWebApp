@@ -55,44 +55,57 @@ router.get("/:id", async (req, res) => {
 //follow a user
 
 router.put("/:id/follow", async (req, res) => {
-  if (req.body.userId !== req.params.id) {
-    try {
-      const user = await User.findById(req.params.id);
-      const currentUser = await User.findById(req.body.userId);
-      if (!user.followers.includes(req.body.userId)) {
-        await user.updateOne({ $push: { followers: req.body.userId } });
-        await currentUser.updateOne({ $push: { followings: req.params.id } });
-        res.status(200).json("user has been followed");
-      } else {
-        res.status(403).json("you allready follow this user");
-      }
-    } catch (err) {
-      res.status(500).json(err);
+  console.log(
+    `Following request for user ${req.params.id} by ${req.body.userId}`
+  );
+  if (req.body.userId === req.params.id) {
+    return res.status(403).json("You cannot follow yourself");
+  }
+
+  try {
+    const userToFollow = await User.findById(req.params.id);
+    const currentUser = await User.findById(req.body.userId);
+
+    if (!userToFollow || !currentUser) {
+      return res.status(404).json("User not found");
     }
-  } else {
-    res.status(403).json("you cant follow yourself");
+
+    if (userToFollow.followers.includes(req.body.userId)) {
+      return res.status(403).json("You already follow this user");
+    }
+
+    await userToFollow.updateOne({ $push: { followers: req.body.userId } });
+    await currentUser.updateOne({ $push: { followings: req.params.id } });
+    res.status(200).json("User has been followed");
+  } catch (err) {
+    res.status(500).json(err);
   }
 });
 
-//unfollow a user
+// unfollow a user
 
 router.put("/:id/unfollow", async (req, res) => {
-  if (req.body.userId !== req.params.id) {
-    try {
-      const user = await User.findById(req.params.id);
-      const currentUser = await User.findById(req.body.userId);
-      if (user.followers.includes(req.body.userId)) {
-        await user.updateOne({ $pull: { followers: req.body.userId } });
-        await currentUser.updateOne({ $pull: { followings: req.params.id } });
-        res.status(200).json("user has been unfollowed");
-      } else {
-        res.status(403).json("you dont follow this user");
-      }
-    } catch (err) {
-      res.status(500).json(err);
+  if (req.body.userId === req.params.id) {
+    return res.status(403).json("You cannot unfollow yourself");
+  }
+
+  try {
+    const userToUnfollow = await User.findById(req.params.id);
+    const currentUser = await User.findById(req.body.userId);
+
+    if (!userToUnfollow || !currentUser) {
+      return res.status(404).json("User not found");
     }
-  } else {
-    res.status(403).json("you cant unfollow yourself");
+
+    if (!userToUnfollow.followers.includes(req.body.userId)) {
+      return res.status(403).json("You do not follow this user");
+    }
+
+    await userToUnfollow.updateOne({ $pull: { followers: req.body.userId } });
+    await currentUser.updateOne({ $pull: { followings: req.params.id } });
+    res.status(200).json("User has been unfollowed");
+  } catch (err) {
+    res.status(500).json(err);
   }
 });
 
@@ -116,38 +129,39 @@ router.get("/:id/posts", async (req, res) => {
   }
 });
 
-// Get random users
-router.get("/random", async (req, res) => {
+// Get all users
+router.get("/", async (req, res) => {
   try {
-    // Assuming you want to exclude the current user from the random list, pass their id in the query.
-    const currentUserId = req.query.currentUserId;
-
-    // Adjust the number in $sample to the number of random documents you want.
-    const randomUsers = await User.aggregate([
-      { $match: { _id: { $ne: mongoose.Types.ObjectId(currentUserId) } } },
-      { $sample: { size: 5 } },
-      { $project: { password: 0, email: 0, updatedAt: 0 } }, // Exclude sensitive information
-    ]);
-
-    res.json(randomUsers);
-  } catch (error) {
-    console.error("Failed to fetch random users:", error);
-    res.status(500).json({ message: "Failed to fetch random users." });
+    const currentUserId = req.query.currentUserId; // Assume this is passed as a query parameter
+    const users = await User.find().select("-password");
+    const usersWithFollowingInfo = users.map((user) => {
+      return {
+        ...user._doc,
+        isFollowing: user.followers.includes(currentUserId),
+      };
+    });
+    res.json(usersWithFollowingInfo);
+  } catch (err) {
+    console.error("Failed to fetch users:", err);
+    res.status(500).json({ message: "Failed to fetch users" });
   }
 });
 
-// Sample backend code for searching users
-router.get("/search", async (req, res) => {
+// Search user by username
+router.get("/search/:username", async (req, res) => {
   try {
-    const { username } = req.query;
-    // Assuming you have some logic here to search users by username...
-    const users = await User.find({ username: new RegExp(username, "i") });
-    res.json(users);
+    const user = await User.findOne({ username: req.params.username }).select(
+      "_id username"
+    );
+    if (user) {
+      // Return the user's ID in the response
+      res.status(200).json({ id: user._id.toString() }); // Convert ObjectId to string
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
   } catch (error) {
-    console.error("Search error:", error);
-    res
-      .status(500)
-      .json({ message: "Internal Server Error while searching users" });
+    console.error("Error searching for user:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 

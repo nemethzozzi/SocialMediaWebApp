@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
-import Posts from './Posts';
 import Sidebar from './Sidebar';
 import 'react-toastify/dist/ReactToastify.css';
+import UserPosts from './UserPosts';
 
 function Profile() {
   const { id } = useParams();
@@ -63,6 +63,9 @@ function Profile() {
             <h1 className="text-center text-3xl font-bold mt-4">{user.username}</h1>
           </div>
           <div className='items-center'>
+            <div className="w-full max-w-3xl mt-4">
+              <UserPosts />
+            </div>
           </div>
         </div>
       </div>

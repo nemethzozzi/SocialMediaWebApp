@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HomeIcon, LogoutIcon, UserCircleIcon, BellIcon } from '@heroicons/react/outline';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -8,6 +10,8 @@ function Sidebar() {
   const { username } = userData;
 
   const handleLogout = () => {
+    toast.success("Logout succesfull!");
+    localStorage.removeItem('user');
     localStorage.clear();
     navigate('/login');
   };

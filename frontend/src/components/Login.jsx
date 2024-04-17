@@ -26,8 +26,8 @@ function Login() {
       const data = await response.json();
       if (response.ok) {
         toast.success('Login successful! Redirecting...');
-        localStorage.setItem('user', JSON.stringify(data)); 
-        setTimeout(() => navigate('/'), 2000);
+        localStorage.setItem('user', JSON.stringify(data));
+        navigate('/');
       } else {
         toast.error(data.message);
       }
@@ -35,8 +35,8 @@ function Login() {
       console.error('Failed to login:', error);
       toast.error('An unexpected error occurred. Please try again.');
     }
-  };
-  
+  };  
+   
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center">

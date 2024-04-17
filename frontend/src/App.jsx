@@ -5,6 +5,7 @@ import Register from "./components/Register";
 import MainPage from "./components/MainPage";
 import Profile from "./components/Profile";
 import Notifications from "./components/Notifications";
+import { ToastContainer } from 'react-toastify';
 
 
 function App() {
