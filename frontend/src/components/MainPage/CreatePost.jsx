@@ -38,6 +38,13 @@ function CreatePost({ onPostCreated }) {
             onChange={e => setDesc(e.target.value)}
             required
           ></textarea>
+          <input
+            type="file"
+            onChange={e => setFile(e.target.files[0])}
+            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
+            file:rounded file:border-0 file:text-sm file:font-semibold
+            file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
           <button type="submit" className="w-full py-2 px-4 bg-blue-500 hover:bg-blue-700 rounded-md text-white text-sm">
             Post
           </button>

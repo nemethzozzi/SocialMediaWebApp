@@ -58,7 +58,7 @@ const handleFollowToggle = async (userIdToFollow, isCurrentlyFollowing) => {
 };
 
 const handleNavigateToProfile = (userId) => {
-  navigate(`/profile/${userId}`);  // Navigate to UserProfile component
+  navigate(`/user/${userId}`);  // Navigate to UserProfile component
 };
 
   if (loading) {

@@ -121,11 +121,16 @@ router.get("/api/users/:id/posts", async (req, res) => {
 
 // Fetch posts for a specific user
 router.get("/:id/posts", async (req, res) => {
+  console.log("Fetching posts for user:", req.params.id);
   try {
     const userPosts = await Post.find({ userId: req.params.id });
+    if (!userPosts.length) {
+      return res.status(404).json([]); // Return an empty array if no posts found
+    }
     res.json(userPosts);
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch user's posts." });
+    console.error("Failed to fetch posts:", error);
+    res.status(500).json([]); // Return an empty array on error
   }
 });
 

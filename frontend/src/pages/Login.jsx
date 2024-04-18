@@ -27,7 +27,9 @@ function Login() {
       if (response.ok) {
         toast.success('Login successful! Redirecting...');
         localStorage.setItem('user', JSON.stringify(data));
-        navigate('/');
+        setTimeout(() => {
+          navigate('/');
+        }, 2000); // Adjust time as necessary
       } else {
         toast.error(data.message);
       }

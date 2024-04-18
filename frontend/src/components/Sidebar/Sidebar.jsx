@@ -13,12 +13,15 @@ function Sidebar() {
     toast.success("Logout succesfull!");
     localStorage.removeItem('user');
     localStorage.clear();
-    navigate('/login');
+    setTimeout(() => {
+      navigate('/login');
+    }, 2000);
   };
 
   return (
     <div className="fixed flex flex-col h-screen bg-gray-800 text-white p-5 justify-between">
       <div>
+      <ToastContainer />
         <div className="mb-4">
           <h2 className="text-4xl font-semibold">{username || 'Username'}</h2>
         </div>

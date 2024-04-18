@@ -29,6 +29,7 @@ app.use("/api/users", userRoute);
 app.use("/api/posts", postRoute);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/search", searchRoute);
+app.use("/uploads", express.static("src/uploads"));
 
 app.listen(process.env.PORT || 5000, () => {
   console.log(`Backend server is running on port ${process.env.PORT || 5000}!`);
