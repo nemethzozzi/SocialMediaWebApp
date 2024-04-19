@@ -19,7 +19,11 @@ mongoose
   .catch((err) => console.error("MongoDB connection error:", err));
 
 //middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://socialmediawebapp.s3-website.eu-north-1.amazonaws.com",
+  })
+);
 app.use(express.json());
 app.use(helmet());
 app.use(morgan("common"));
