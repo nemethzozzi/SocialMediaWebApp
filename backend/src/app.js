@@ -18,12 +18,16 @@ mongoose
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
+const corsOptions = {
+  origin:
+    process.env.NODE_ENV === "production"
+      ? ["http://socialmediawebapp.s3-website.eu-north-1.amazonaws.com"]
+      : "*",
+  optionsSuccessStatus: 200, // For legacy browser support
+};
+
 //middleware
-app.use(
-  cors({
-    origin: "http://socialmediawebapp.s3-website.eu-north-1.amazonaws.com",
-  })
-);
+app.use(cors());
 app.use(express.json());
 app.use(helmet());
 app.use(morgan("common"));
