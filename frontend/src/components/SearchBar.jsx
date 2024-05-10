@@ -14,7 +14,7 @@ const SearchBar = () => {
           return;
         }
         try {
-          const response = await axios.get(`http://localhost:5000/api/search/${encodeURIComponent(username.trim())}`);
+          const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/search/${encodeURIComponent(username.trim())}`);
           if (response.data && response.data.id) {
             navigate(`/user/${response.data.id}`);
           } else {

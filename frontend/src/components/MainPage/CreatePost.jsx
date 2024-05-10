@@ -8,13 +8,13 @@ function CreatePost({ onPostCreated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const post = {
-      userId: user._id,
-      desc: desc,
-    };
+    const formData = new FormData();
+    formData.append('img', selectedFile); // Assuming 'selectedFile' is the state holding your file
+    formData.append('userId', user._id); // Assuming 'user' holds your user data
+    formData.append('desc', postDesc); 
 
     try {
-      const response = await axios.post('http://localhost:5000/api/posts', post, {
+      const response = await axios.post(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/posts`, formData, {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` }
       });
       toast.success('Post created successfully!');

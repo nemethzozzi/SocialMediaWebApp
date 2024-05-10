@@ -14,7 +14,7 @@ function Login() {
     setPasswordShown(!passwordShown);
   };
 
-  console.log(import.meta.env);
+  // console.log(import.meta.env);
 
 
   const handleSubmit = async (e) => {

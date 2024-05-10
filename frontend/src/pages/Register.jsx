@@ -18,13 +18,13 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
       const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
-      });      
+      });
       const data = await response.json();
       if (response.ok) {
         toast.success('Registration successful! Redirecting to login...');
@@ -36,7 +36,7 @@ function Register() {
       console.error('Failed to register:', error);
       toast.error('An unexpected error occurred. Please try again.');
     }
-  };
+  };  
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center">

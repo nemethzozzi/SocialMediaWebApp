@@ -10,6 +10,7 @@ const authRoute = require("./routes/auth");
 const postRoute = require("./routes/posts");
 const notificationRoute = require("./routes/notifications");
 const searchRoute = require("./routes/users");
+const path = require("path");
 
 dotenv.config();
 
@@ -25,8 +26,15 @@ const corsOptions = {
     "http://socialmediawebapp.s3-website.eu-north-1.amazonaws.com",
   ],
   credentials: true,
-  optionsSuccessStatus: 200, // For legacy browser support
+  optionsSuccessStatus: 200,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
+
+function setCrossOriginResourcePolicy(req, res, next) {
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  next();
+}
 
 //middleware
 app.use(cors(corsOptions));
@@ -40,6 +48,11 @@ app.use("/api/posts", postRoute);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/search", searchRoute);
 app.use("/uploads", express.static("src/uploads"));
+app.use(
+  "/images",
+  setCrossOriginResourcePolicy,
+  express.static(path.join(__dirname, "..", "public", "images"))
+);
 
 app.listen(process.env.PORT || 5000, () => {
   console.log(`Backend server is running on port ${process.env.PORT || 5000}!`);

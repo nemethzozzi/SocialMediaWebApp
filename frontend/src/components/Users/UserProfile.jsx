@@ -13,33 +13,39 @@ const UserProfile = () => {
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState(null);
 
-  if (user) {
-    console.log('Current User ID:', user._id);
-    console.log('Current Username:', user.username);
-    console.log('URL ID:', id);
+//   if (user) {
+//     console.log('Current User ID:', user._id);
+//     console.log('Current Username:', user.username);
+//     console.log('URL ID:', id);
 
-    if (user._id === id) {
-        console.log('This is the profile of the current user');
-    } else {
-        console.log('This is the profile of another user');
-    }
-}
+//     if (user._id === id) {
+//         console.log('This is the profile of the current user');
+//     } else {
+//         console.log('This is the profile of another user');
+//     }
+// }
 
   useEffect(() => {
     const fetchUserAndPosts = async () => {
       try {
-        const userInfo = await axios.get(`http://localhost:5000/api/users/${id}`);
+        const userInfo = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/users/${id}`);
         setUser(userInfo.data);
-        const postResults = await axios.get(`http://localhost:5000/api/users/${id}/posts`);
-        if (Array.isArray(postResults.data)) {
-          setPosts(postResults.data);
-        } else {
-          setError('Failed to fetch posts');
+        try {
+          const postResults = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/users/${id}/posts`);
+          setPosts(postResults.data || []);
+        } catch (postError) {
+          if (postError.response && postError.response.status === 404) {
+            // Handle 404 error when no posts are found
+            setPosts([]);
+          } else {
+            throw postError;
+          }
         }
       } catch (err) {
         setError(err.toString());
       }
     };
+    
 
     fetchUserAndPosts();
   }, [id]);
@@ -50,7 +56,7 @@ const UserProfile = () => {
 
   const handleLike = async (postId) => {
     try {
-      const response = await axios.put(`http://localhost:5000/api/posts/${postId}/like`, {
+      const response = await axios.put(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/posts/${postId}/like`, {
         userId: user._id
       });
       if (response.data) {
@@ -75,7 +81,7 @@ const UserProfile = () => {
 
   const handleDeletePost = async (postId) => {
     try {
-      const response = await axios.delete(`http://localhost:5000/api/posts/${postId}`, {
+      const response = await axios.delete(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/posts/${postId}`, {
         headers: { Authorization: `Bearer ${user.token}` },
         data: { userId: user._id } // Ensure backend checks this!
       });
@@ -94,7 +100,7 @@ const UserProfile = () => {
     const updatedPosts = posts.map(async (post) => {
       if (post._id === postId) {
         try {
-          const response = await fetch(`http://localhost:5000/api/posts/${postId}/comments`, {
+          const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/posts/${postId}/comments`, {
             headers: {
               'Authorization': `Bearer ${user.token}`,
             },
@@ -114,6 +120,32 @@ const UserProfile = () => {
     setPosts(await Promise.all(updatedPosts)); // Update the state once all promises are resolved
   };
 
+  // const handleFollowToggle = async (userIdToFollow, isCurrentlyFollowing) => {
+  //   const currentUserId = JSON.parse(localStorage.getItem('user'))?._id;
+  //   const endpoint = isCurrentlyFollowing ? 'unfollow' : 'follow';
+  
+  //   if (currentUserId && userIdToFollow !== currentUserId) {
+  //     try {
+  //       const response = await axios.put(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/users/${userIdToFollow}/${endpoint}`, {
+  //         userId: currentUserId
+  //       });
+  
+  //       toast.success(`User has been ${isCurrentlyFollowing ? 'unfollowed' : 'followed'}.`);
+  //       setUsers(users.map(user => {
+  //         if (user._id === userIdToFollow) {
+  //           return { ...user, isFollowing: !isCurrentlyFollowing };
+  //         }
+  //         return user;
+  //       }));
+  //     } catch (error) {
+  //       console.error(`Failed to ${endpoint} user:`, error?.response?.data?.message || error.message);
+  //       toast.error(`Failed to ${endpoint} user: ${error?.response?.data?.message || error.message}`);
+  //     }
+  //   } else {
+  //     toast.error('Operation not allowed.');
+  //   }
+  // };
+
   if (error) {
     return <div className="text-red-500">{error}</div>;
   }
@@ -121,14 +153,22 @@ const UserProfile = () => {
   return (
     <div className="container mx-auto p-4">
       <ToastContainer />
-      <h1 className="text-3xl font-bold text-center mb-4">
+      <div className="text-center mb-4">
         <img
-          src={user?.profilePicture || "/images/default_profile.png"}
+          src={user?.profilePicture}
           alt={`${user?.username}'s profile`}
-          className="inline-block h-10 w-10 rounded-full mr-2"
+          className="inline-block h-40 w-40 rounded-full mb-2" 
         />
-        <span>{user?.username}</span>
-      </h1>
+        <h1 className="text-3xl font-bold">
+          {user?.username}
+        </h1>
+      </div>
+      {/* <button
+        onClick={() => handleFollowToggle(user._id, user.isFollowing)}
+        className={`px-4 py-1 rounded ${user.isFollowing ? 'bg-red-500' : 'bg-blue-500'} text-white`}
+      >
+        {user.isFollowing ? 'Unfollow' : 'Follow'}
+      </button> */}
       {posts.length > 0 ? (
         posts.map((post) => (
           <div key={post._id} className="bg-white shadow rounded-md p-6 relative mt-4">
@@ -163,7 +203,7 @@ const UserProfile = () => {
           </div>
         ))
       ) : (
-        <p>No posts to show.</p>
+        <p className="text-center text-2xl mt-10">No posts to show.</p>
       )}
     </div>
   );

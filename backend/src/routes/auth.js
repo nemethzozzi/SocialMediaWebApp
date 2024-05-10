@@ -5,22 +5,28 @@ const bcrypt = require("bcrypt");
 //REGISTER
 router.post("/register", async (req, res) => {
   try {
-    //generate new password
+    // Check if the username is already in use
+    const existingUser = await User.findOne({ username: req.body.username });
+    if (existingUser) {
+      return res.status(400).json({ message: "Username is already in use" });
+    }
+
+    // Generate new password hash
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
-    //create new user
+    // Create new user
     const newUser = new User({
       username: req.body.username,
       email: req.body.email,
       password: hashedPassword,
     });
 
-    //save user and respond
+    // Save user and respond
     const user = await newUser.save();
     res.status(200).json(user);
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json({ message: "An unexpected error occurred" });
   }
 });
 

@@ -21,7 +21,7 @@ function App() {
         <Route path="/" element={<MainPage />} />
         <Route path="/user/:id" element={<UserProfilePage />} />
         <Route path="/profile/:id" element={<ProfilePage />} />
-        {/* <Route path="/update-profile/:id" element={<UpdateUserPage />} /> */}
+        <Route path="/update-profile/:userId" element={<UpdateUserPage />} />
         <Route path="/notifications" element={<Notifications />} />
       </Routes>
     </Router>

@@ -3,15 +3,20 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai'; // For liking posts
 import { HiOutlineTrash } from 'react-icons/hi'; // For deleting posts
+import { useNavigate } from 'react-router-dom';
+
 
 function CommentSection({ postId, user, fetchCommentsForPost }) {
     const [comments, setComments] = useState([]);
     const [commentText, setCommentText] = useState('');
-  
+    const [userData, setUserData] = useState(JSON.parse(localStorage.getItem('user')) || {});
+    const { username, profilePicture } = userData;
+
+
     // Standalone function to fetch comments
     const fetchComments = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/posts/${postId}/comments`, {
+        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/posts/${postId}/comments`, {
           headers: {
             'Authorization': `Bearer ${user.token}`,
           },
@@ -34,7 +39,7 @@ function CommentSection({ postId, user, fetchCommentsForPost }) {
     const handleCommentSubmit = async (e) => {
       e.preventDefault();
       try {
-        const response = await fetch(`http://localhost:5000/api/posts/${postId}/comments`, {
+        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/posts/${postId}/comments`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -57,7 +62,7 @@ function CommentSection({ postId, user, fetchCommentsForPost }) {
   
     const deleteComment = async (commentId) => {
       try {
-        const response = await fetch(`http://localhost:5000/api/posts/${postId}/comments/${commentId}`, {
+        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/posts/${postId}/comments/${commentId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -82,6 +87,9 @@ function CommentSection({ postId, user, fetchCommentsForPost }) {
       const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
       return new Date(dateString).toLocaleDateString(undefined, options);
     };
+
+    const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL;  
+    const profileImageUrl = `${apiUrl}/images/${profilePicture.split('/').pop()}`;
   
     return (
       <div className="mt-4">
@@ -103,9 +111,10 @@ function CommentSection({ postId, user, fetchCommentsForPost }) {
             <div className="flex items-center">
               {/* User image */}
               <img
-                src={comment.userId.profilePicture || "/images/default_image.png"}
+                src={profileImageUrl}
                 alt={`${comment.userId.username}'s profile`}
                 className="h-8 w-8 rounded-full object-cover mr-2"
+                onClick={() => navigate(`/profile/${userData._id}`)}
               />
               {/* Username and comment text */}
               <div className="flex-1 min-w-0 break-words">

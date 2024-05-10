@@ -11,10 +11,11 @@ function MainPage() {
   const [posts, setPosts] = useState([]);
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
 
+  
   useEffect(() => {
     async function fetchPosts() {
       try {
-        const response = await axios.get(`http://localhost:5000/api/posts/timeline/all?userId=${user._id}`, {
+        const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/posts/timeline/all?userId=${user._id}`, {
           headers: { Authorization: `Bearer ${user.token}` }
         });
         setPosts(response.data);

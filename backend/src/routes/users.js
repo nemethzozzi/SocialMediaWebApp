@@ -2,28 +2,64 @@ const User = require("../models/User");
 const Post = require("../models/Post");
 const router = require("express").Router();
 const bcrypt = require("bcrypt");
+const multer = require("multer");
+const path = require("path");
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "public/images/");
+  },
+  filename: (req, file, cb) => {
+    const ext = file.originalname.split(".").pop();
+    cb(null, `profilePicture-${Date.now()}.${ext}`);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+router.post(
+  "/upload/:userId",
+  upload.single("profilePicture"),
+  async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).send("User not found");
+      }
+      user.profilePicture = `/images/${req.file.filename}`; // Update profile picture path
+      await user.save();
+      res.send({ message: "Profile updated successfully", data: user });
+    } catch (error) {
+      res.status(500).send("Server error");
+    }
+  }
+);
 
 //update user
-router.put("/:id", async (req, res) => {
-  if (req.body.userId === req.params.id || req.body.isAdmin) {
+router.put("/:id", upload.single("profilePicture"), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.username = req.body.username || user.username;
+    user.email = req.body.email || user.email;
+    if (req.file) {
+      // Ensure the path is web accessible
+      user.profilePicture = `/public/images/${req.file.filename}`;
+    }
     if (req.body.password) {
-      try {
-        const salt = await bcrypt.genSalt(10);
-        req.body.password = await bcrypt.hash(req.body.password, salt);
-      } catch (err) {
-        return res.status(500).json(err);
-      }
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(req.body.password, salt);
     }
-    try {
-      const user = await User.findByIdAndUpdate(req.params.id, {
-        $set: req.body,
-      });
-      res.status(200).json("Account has been updated");
-    } catch (err) {
-      return res.status(500).json(err);
-    }
-  } else {
-    return res.status(403).json("You can update only your account!");
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile updated",
+      profilePicture: user.profilePicture,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update", error: err.message });
   }
 });
 
@@ -42,15 +78,15 @@ router.delete("/:id", async (req, res) => {
 });
 
 //get a user
-router.get("/:id", async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    const { password, updatedAt, ...other } = user._doc;
-    res.status(200).json(other);
-  } catch (err) {
-    res.status(500).json(err);
-  }
-});
+// router.get("/:id", async (req, res) => {
+//   try {
+//     const user = await User.findById(req.params.id);
+//     const { password, updatedAt, ...other } = user._doc;
+//     res.status(200).json(other);
+//   } catch (err) {
+//     res.status(500).json(err);
+//   }
+// });
 
 //follow a user
 
@@ -151,6 +187,46 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch users" });
   }
 });
+
+// Correct ordering in routes/users.js or wherever your user routes are defined
+router.get("/check-username", async (req, res) => {
+  const { username } = req.query;
+  if (!username) {
+    return res
+      .status(400)
+      .json({ message: "Username query parameter is required" });
+  }
+
+  try {
+    const user = await User.findOne({ username });
+    res.status(200).json({ available: !user });
+  } catch (error) {
+    console.error("Error in check-username route: ", error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+});
+
+// Place dynamic routes after specific routes
+router.get("/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    // Exclude sensitive data such as passwords when sending user data
+    const { password, ...userData } = user._doc;
+    res.status(200).json(userData);
+  } catch (error) {
+    console.error("Error fetching user by ID: ", error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+});
+
+// Any other routes that might capture /:id
 
 // Search user by username
 router.get("/search/:username", async (req, res) => {

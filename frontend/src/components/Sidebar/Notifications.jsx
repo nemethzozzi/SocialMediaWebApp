@@ -1,73 +1,68 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Sidebar from './Sidebar'; // Ensure this component exists and is properly imported
-import { useNavigate } from 'react-router-dom'; // Ensure you're using react-router-dom v5.2.0 or above
 
 function Notifications() {
-  const [notifications, setNotifications] = useState([]);
-  const navigate = useNavigate(); // Initialized for redirection
-  const user = JSON.parse(localStorage.getItem('user')); // Make sure the user is stored in localStorage
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const user = JSON.parse(localStorage.getItem('user'));
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      // Check if user data is available before attempting to fetch notifications
-      if (!user || !user._id) {
-        toast.info('Please log in to view notifications.');
-        return;
-      }
-      
-      try {
-        const response = await fetch(`http://localhost:5000/api/notifications/${user._id}`, {
-          method: 'GET',
-          headers: {
-            // Add authorization header if required
-            'Authorization': `Bearer ${user.token}`,
-          },
-        });
-    
-        if (!response.ok) {
-          const errorData = await response.text();
-          throw new Error(`Failed to fetch notifications: ${errorData}`);
+    // Log to see if user data and token are fetched correctly
+    console.log("User data fetched:", user);
+
+    useEffect(() => {
+        // Only proceed if the token is available
+        if (!user || !user.token) {
+            console.error("User or user token not available at the time of effect execution.");
+            setError("Authentication data is missing. Please log in.");
+            return; // Stop the function if there is no user or token
         }
-        
-        const data = await response.json();
-        setNotifications(data);
-      } catch (error) {
-        console.error("Error:", error.message);
-        toast.error("Failed to fetch notifications");
-      }
-    };    
-    fetchNotifications();
-  }, [user?._id, user?.token]); // Dependency array to refetch if user ID or token changes
 
-  const handleNotificationClick = (notification) => {
-    // Check if notification has postId, navigate to post page if it exists
-    if (notification.postId) {
-      navigate(`/post/${notification.postId}`);
-    } else {
-      toast.error('Post ID not found in notification.');
+        const fetchNotifications = async () => {
+            setLoading(true);
+            try {
+                const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/notifications`, {
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                });
+                setNotifications(response.data);
+                setLoading(false);
+            } catch (err) {
+                console.error('Error fetching notifications:', err);
+                setError('Failed to fetch notifications');
+                toast.error('Failed to load notifications.');
+                setLoading(false);
+            }
+        };
+
+        fetchNotifications();
+    }, [user?.token]); // Dependency on user.token to re-run when it changes
+
+    if (!user || !user.token) {
+        return <p>You must be logged in to view this page.</p>;
     }
-  };
 
-  return (
-    <div className="flex">
-      <Sidebar /> {/* Render Sidebar if it exists */}
-      <div className="notifications-content">
-        <h2>Notifications</h2>
-        {notifications.length > 0 ? (
-          notifications.map((notification, index) => (
-            <div key={index} onClick={() => handleNotificationClick(notification)}>
-              {notification.type} by {notification.byUserId} on {new Date(notification.date).toLocaleDateString()}
-            </div>
-          ))
-        ) : (
-          <p>No new notifications.</p>
-        )}
-        <ToastContainer />
-      </div>
-    </div>
-  );
+    if (loading) return <p>Loading...</p>;
+    if (error) return <p>{error}</p>;
+
+    return (
+        <div className="container mx-auto p-4">
+            <ToastContainer />
+            <h1 className="text-2xl font-bold mb-4">Notifications</h1>
+            {notifications.length > 0 ? (
+                <ul>
+                    {notifications.map(notification => (
+                        <li key={notification._id} className="bg-white p-2 shadow rounded mb-2">
+                            {notification.message}
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p>No new notifications.</p>
+            )}
+        </div>
+    );
 }
 
 export default Notifications;
