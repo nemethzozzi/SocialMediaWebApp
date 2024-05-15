@@ -1,20 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useNavigate } from 'react-router-dom'; // Make sure this is correctly imported
-import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai'; // For liking posts
-import { HiOutlineTrash } from 'react-icons/hi'; // For deleting posts
+import { useNavigate } from 'react-router-dom';
+import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
+import { HiOutlineTrash } from 'react-icons/hi';
 import CommentSection from './CommentSection';
 import axios from 'axios';
-
 
 function Posts() {
   const [posts, setPosts] = useState([]);
   const user = JSON.parse(localStorage.getItem('user'));
-  const { username, profilePicture } = user;
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL;
-
 
   useEffect(() => {
     const fetchTimelinePosts = async () => {
@@ -25,84 +22,75 @@ function Posts() {
             'Authorization': `Bearer ${user.token}`,
           },
         });
-  
+
         if (!response.ok) {
           const errorBody = await response.text();
           throw new Error(`Failed to fetch posts: ${response.status}, Body: ${errorBody}`);
         }
-  
+
         const result = await response.json();
-        // Sort posts in descending order based on the 'createdAt' timestamp
         const sortedPosts = result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        
-        // Now let's assume we want to fetch user details for each post
+
         const postsWithUserDetails = await Promise.all(
           sortedPosts.map(async (post) => {
-            // If post.userId is just the ID, fetch the user details separately
             const userResponse = await axios.get(`${apiUrl}/api/users/${post.userId}`);
-            // Combine the post with the user details
             return { ...post, user: userResponse.data };
           })
         );
-  
-        // Now you can set the postsWithUserDetails in your state
+
         setPosts(postsWithUserDetails);
       } catch (error) {
         console.error('Error fetching posts:', error);
         toast.error(`Could not fetch posts: ${error.message}`);
       }
     };
-  
+
     if (user && user._id) fetchTimelinePosts();
-  }, [user?._id, user?.token]); // Assuming user is defined and includes _id and token
-  
+  }, [user?._id, user?.token]);
 
-const handleLike = async (postId) => {
-  try {
-    const response = await fetch(`${apiUrl}/api/posts/${postId}/like`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${user.token}`,
-      },
-      body: JSON.stringify({ userId: user._id }),
-    });
-
-    if (!response.ok) {
-      const errorResponse = await response.json(); // Get more details from the server's response
-      throw new Error(`Failed to like the post: ${errorResponse.message}`);
-    }
-
-    // Optimistically update the UI after liking a post
-    const likedPost = posts.find(post => post._id === postId);
-    if (likedPost) {
-      if (hasLikedPost(likedPost.likes)) {
-        // User is unliking the post
-        toast.info('You unliked a post.');
-      } else {
-        // User is liking the post
-        toast.success('You liked a post.');
-      }
-
-      const updatedPosts = posts.map(post => {
-        if (post._id === postId) {
-          if (hasLikedPost(post.likes)) {
-            return { ...post, likes: post.likes.filter(id => id !== user._id) }; // Unlike the post
-          } else {
-            return { ...post, likes: [...post.likes, user._id] }; // Like the post
-          }
-        }
-        return post;
+  const handleLike = async (postId) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/posts/${postId}/like`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`,
+        },
+        body: JSON.stringify({ userId: user._id }),
       });
 
-      setPosts(updatedPosts);
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        throw new Error(`Failed to like the post: ${errorResponse.message}`);
+      }
+
+      const likedPost = posts.find(post => post._id === postId);
+      if (likedPost) {
+        if (hasLikedPost(likedPost.likes)) {
+          toast.info('You unliked a post.');
+        } else {
+          toast.success('You liked a post.');
+        }
+
+        const updatedPosts = posts.map(post => {
+          if (post._id === postId) {
+            if (hasLikedPost(post.likes)) {
+              return { ...post, likes: post.likes.filter(id => id !== user._id) };
+            } else {
+              return { ...post, likes: [...post.likes, user._id] };
+            }
+          }
+          return post;
+        });
+
+        setPosts(updatedPosts);
+      }
+    } catch (error) {
+      console.error('Error liking/disliking post:', error);
+      toast.error(`Error: ${error.message}`);
     }
-  } catch (error) {
-    console.error('Error liking/disliking post:', error);
-    toast.error(`Error: ${error.message}`);
-  }
-};
-  
+  };
+
   const handleDeletePost = async (postId) => {
     try {
       const response = await fetch(`${apiUrl}/api/posts/${postId}`, {
@@ -125,7 +113,6 @@ const handleLike = async (postId) => {
   };
 
   const fetchCommentsForPost = async (postId) => {
-    // Assuming each post object has a 'comments' array
     const updatedPosts = posts.map(async (post) => {
       if (post._id === postId) {
         try {
@@ -138,21 +125,21 @@ const handleLike = async (postId) => {
             throw new Error('Failed to fetch comments');
           }
           const data = await response.json();
-          return { ...post, comments: data }; // Update this post's comments
+          return { ...post, comments: data };
         } catch (error) {
           console.error('Error fetching comments:', error);
           toast.error(`Could not fetch comments: ${error.message}`);
         }
       }
-      return post; // Return unchanged post for those that don't match
+      return post;
     });
-    setPosts(await Promise.all(updatedPosts)); // Update the state once all promises are resolved
+    setPosts(await Promise.all(updatedPosts));
   };
 
   const hasLikedPost = (likes) => likes.includes(user._id);
 
   const handleNavigateToProfile = (userId) => {
-    navigate(`/profile/${userId}`);
+    navigate(`/user/${userId}`);
   };
 
   return (
@@ -162,7 +149,7 @@ const handleLike = async (postId) => {
         posts.map((post) => (
           <div key={post._id} className="bg-white shadow rounded-md p-6 relative">
             {user._id === post.userId && (
-              <button 
+              <button
                 onClick={() => handleDeletePost(post._id)}
                 className="absolute top-2 right-2 text-red-500 hover:text-red-700"
                 aria-label="Delete post"
@@ -177,12 +164,21 @@ const handleLike = async (postId) => {
                   src={`${apiUrl}/images/${post.user.profilePicture.split('/').pop()}`}
                   alt={`${post.user?.username}'s profile`}
                   className="h-8 w-8 rounded-full object-cover"
-                  onClick={() => navigate(`/profile/${post.user._id}`)}
+                  onClick={() => navigate(`/user/${post.user._id}`)}
                 />
-                <span className="font-semibold ml-2" onClick={() => handleNavigateToProfile(post.userId)}>{post.user?.username}</span>
+                <span className="font-semibold ml-2" 
+                onClick={() => handleNavigateToProfile(post.userId)}>{post.user?.username}
+                </span>
               </div>
             </div>
             <p>{post.desc}</p>
+            {post.img && (
+              <img
+                src={`${apiUrl}${post.img}`}
+                alt="Post"
+                className="mt-4 max-h-96"
+              />
+            )}
             <div className="flex items-center mt-2">
               <button onClick={() => handleLike(post._id)} className="text-red-500 mr-2">
                 {hasLikedPost(post.likes) ? <AiFillHeart size="24" /> : <AiOutlineHeart size="24" />}
@@ -198,7 +194,5 @@ const handleLike = async (postId) => {
     </div>
   );
 }
-
-
 
 export default Posts;

@@ -14,7 +14,6 @@ function ProfilePage({ user, }) {
       {/* Main content */}
       <div className="md:w-4/6 xl:w-4/6 flex flex-col items-center p-4">
         <SearchBar />
-        <h1 className="mt-6 text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Welcome {user?.username}</h1>
         <UserProfile />
       </div>
       {/* User Page */}

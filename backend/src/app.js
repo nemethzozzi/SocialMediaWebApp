@@ -42,12 +42,19 @@ app.use(express.json());
 app.use(helmet());
 app.use(morgan("common"));
 
+// API routes
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
 app.use("/api/posts", postRoute);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/search", searchRoute);
-app.use("/uploads", express.static("src/uploads"));
+
+// Serve static files
+app.use(
+  "/uploads",
+  setCrossOriginResourcePolicy,
+  express.static(path.join(__dirname, "..", "public", "uploads"))
+);
 app.use(
   "/images",
   setCrossOriginResourcePolicy,

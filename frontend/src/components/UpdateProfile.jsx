@@ -19,7 +19,7 @@ function UpdateProfile() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [passwordShown, setPasswordShown] = useState(false);
-
+    const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL; 
     const { userId } = useParams();
 
     const togglePasswordVisibility = () => {
@@ -28,7 +28,7 @@ function UpdateProfile() {
 
     useEffect(() => {
         setLoading(true);
-        axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/users/${userId}`)
+        axios.get(`${apiUrl}/api/users/${userId}`)
             .then(response => {
                 setUser(response.data);
                 setUsername(response.data.username);
@@ -48,7 +48,7 @@ function UpdateProfile() {
     const checkUsernameAvailability = async () => {
         if (username !== originalUsername && username.trim() !== "") {
             try {
-                const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/users/check-username`, {
+                const response = await axios.get(`${apiUrl}/api/users/check-username`, {
                     params: { username }
                 });
                 setUsernameAvailable(response.data.available);
@@ -110,7 +110,7 @@ function UpdateProfile() {
 
         try {
             const token = localStorage.getItem('token'); // Assuming the token is stored in localStorage
-            const response = await axios.put(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/users/${userId}`, formData, {
+            const response = await axios.put(`${apiUrl}/api/users/${userId}`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`, // Assuming a Bearer token is used
                     'Content-Type': 'multipart/form-data'
@@ -143,7 +143,11 @@ function UpdateProfile() {
                 <h1 className='text-lg font-bold mb-4 text-center'>User Profile</h1>
                 {profilePicture && (
                     <div className="flex justify-center mb-4">
-                        <img src={profilePicture} alt="Profile" className="rounded-full h-32 w-32 object-cover" />
+                        <img
+                            src={`${apiUrl}/images/${user?.profilePicture.split('/').pop()}`}
+                            alt="Profile"
+                            className="rounded-full h-32 w-32 object-cover"
+                        />
                     </div>
                 )}
                 <div className="flex flex-col items-center">

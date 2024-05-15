@@ -3,6 +3,8 @@ import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
+import { useFollow } from '../FollowContext'; //
+
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -10,6 +12,8 @@ const UsersPage = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
   const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL; // Ensure the API URL is correctly set
+  const { followState, toggleFollow } = useFollow(); // Use the context
+
 
   useEffect(() => {
     if (!user || !user._id) {

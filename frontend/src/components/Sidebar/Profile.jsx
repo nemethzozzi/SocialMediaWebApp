@@ -12,7 +12,7 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState(null);
-  const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL;  // Ensure the API URL is set
+  const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL;
 
   useEffect(() => {
     const fetchUserAndPosts = async () => {

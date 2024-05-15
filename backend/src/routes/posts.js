@@ -1,11 +1,34 @@
+const express = require("express");
+const multer = require("multer");
 const router = require("express").Router();
 const Post = require("../models/Post");
 const User = require("../models/User");
+const path = require("path");
 
-//create a post
+// Set up multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "../public/uploads"));
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname)); // Append the current timestamp to the file name
+  },
+});
 
-router.post("/", async (req, res) => {
-  const newPost = new Post(req.body);
+const upload = multer({ storage });
+
+// Middleware to serve static files
+router.use(
+  "/uploads",
+  express.static(path.join(__dirname, "../public/uploads"))
+);
+
+// Create a post
+router.post("/", upload.single("image"), async (req, res) => {
+  const newPost = new Post({
+    ...req.body,
+    img: req.file ? `/uploads/${req.file.filename}` : null,
+  });
   try {
     const savedPost = await newPost.save();
     res.status(200).json(savedPost);
@@ -13,6 +36,7 @@ router.post("/", async (req, res) => {
     res.status(500).json(err);
   }
 });
+
 //update a post
 
 router.put("/:id", async (req, res) => {
@@ -86,7 +110,6 @@ router.get("/:id", async (req, res) => {
 
 router.get("/timeline/all", async (req, res) => {
   try {
-    // Use req.query.userId to access the userId sent as a query parameter
     const currentUser = await User.findById(req.query.userId);
     if (!currentUser) {
       return res.status(404).json({ message: "User not found" });
