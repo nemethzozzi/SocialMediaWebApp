@@ -26,6 +26,7 @@ router.post("/register", async (req, res) => {
     const user = await newUser.save();
     res.status(200).json(user);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "An unexpected error occurred" });
   }
 });
@@ -49,6 +50,7 @@ router.post("/login", async (req, res) => {
     // Respond with user data if login is successful
     res.status(200).json(user); // Be careful with what you send back!
   } catch (err) {
+    console.error("Login error:", err);
     res.status(500).json({ message: "An unexpected error occurred" });
   }
 });

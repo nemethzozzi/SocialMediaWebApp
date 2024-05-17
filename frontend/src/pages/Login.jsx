@@ -9,18 +9,18 @@ function Login() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
   const [passwordShown, setPasswordShown] = useState(false);
+  const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL; 
 
   const togglePasswordVisibility = () => {
     setPasswordShown(!passwordShown);
   };
 
-  // console.log(import.meta.env);
 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/auth/login`, {
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -31,7 +31,7 @@ function Login() {
         localStorage.setItem('user', JSON.stringify(data));
         setTimeout(() => {
           navigate('/');
-        }, 2000); // Adjust time as necessary
+        }, 2000);
       } else {
         toast.error(data.message);
       }

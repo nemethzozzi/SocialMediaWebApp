@@ -24,6 +24,7 @@ const corsOptions = {
     "http://localhost:5173",
     "http://localhost:5000",
     "http://socialmediawebapp.s3-website.eu-north-1.amazonaws.com",
+    "http://ec2-16-170-159-120.eu-north-1.compute.amazonaws.com:5000",
   ],
   credentials: true,
   optionsSuccessStatus: 200,

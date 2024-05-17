@@ -10,6 +10,7 @@ function Register() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
   const [passwordShown, setPasswordShown] = useState(false);
+  const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL; 
 
   const togglePasswordVisibility = () => {
     setPasswordShown(!passwordShown);
@@ -20,7 +21,7 @@ function Register() {
     e.preventDefault();
   
     try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}/api/auth/register`, {
+      const response = await fetch(`${apiUrl}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
