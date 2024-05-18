@@ -3,7 +3,6 @@ import { toast, ToastContainer } from 'react-toastify';
 import axios from 'axios';
 import Sidebar from "../components/Sidebar/Sidebar";
 import Posts from "../components/MainPage/Posts";
-import SearchBar from "../components/SearchBar";
 import UsersPage from "../components/Users/UsersPage";
 import CreatePost from '../components/MainPage/CreatePost';
 
@@ -43,7 +42,6 @@ function MainPage() {
       </div>
       {/* Main content */}
       <div className="md:w-4/6 xl:w-4/6 flex flex-col items-center p-4">
-        <SearchBar />
         <CreatePost onPostCreated={handlePostCreated} />
         <div className="w-full max-w-3xl mt-4">
         <Posts/>

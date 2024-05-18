@@ -56,14 +56,14 @@ function Sidebar() {
             <UserCircleIcon className="h-6 w-6 mr-2" />
             <span>Profile</span>
           </div>
-          <div className="flex items-center cursor-pointer mt-4" onClick={() => navigate('/settings')}>
+          {/* <div className="flex items-center cursor-pointer mt-4" onClick={() => navigate('/settings')}>
             <CogIcon className="h-6 w-6 mr-2" />
             <span>Settings</span>
           </div>
           <div className="flex items-center cursor-pointer mt-4" onClick={() => navigate('/notifications')}>
             <BellIcon className="h-6 w-6 mr-2" />
             <span>Notifications</span>
-          </div>
+          </div> */}
         </div>
       </div>
 

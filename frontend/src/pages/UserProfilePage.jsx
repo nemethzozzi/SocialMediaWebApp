@@ -1,6 +1,5 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar/Sidebar';
-import SearchBar from '../components/SearchBar';
 import UsersPage from '../components/Users/UsersPage';
 import UserProfile from '../components/Users/UserProfile';
 
@@ -13,7 +12,6 @@ function ProfilePage({ user, }) {
       </div>
       {/* Main content */}
       <div className="md:w-4/6 xl:w-4/6 flex flex-col items-center p-4">
-        <SearchBar />
         <UserProfile />
       </div>
       {/* User Page */}

@@ -1,27 +1,31 @@
 const express = require("express");
 const multer = require("multer");
-const router = require("express").Router();
+const router = express.Router();
 const Post = require("../models/Post");
 const User = require("../models/User");
 const path = require("path");
+const fs = require("fs");
+
+// Ensure upload directory exists
+const uploadDir = path.join(__dirname, "../../public/uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Set up multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../public/uploads"));
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Append the current timestamp to the file name
+    cb(null, Date.now() + path.extname(file.originalname));
   },
 });
 
 const upload = multer({ storage });
 
 // Middleware to serve static files
-router.use(
-  "/uploads",
-  express.static(path.join(__dirname, "../public/uploads"))
-);
+router.use("/uploads", express.static(uploadDir));
 
 // Create a post
 router.post("/", upload.single("image"), async (req, res) => {
@@ -37,23 +41,26 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-//update a post
-
-router.put("/:id", async (req, res) => {
+// Update a post
+router.put("/:id", upload.single("image"), async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (post.userId === req.body.userId) {
-      await post.updateOne({ $set: req.body });
-      res.status(200).json("the post has been updated");
+      const updatedData = { desc: req.body.desc, edited: true };
+      if (req.file) {
+        updatedData.img = `/uploads/${req.file.filename}`;
+      }
+      await post.updateOne({ $set: updatedData });
+      res.status(200).json("The post has been updated");
     } else {
-      res.status(403).json("you can update only your post");
+      res.status(403).json("You can update only your post");
     }
   } catch (err) {
     res.status(500).json(err);
   }
 });
-//delete a post
 
+// Delete a post
 router.delete("/:postId", async (req, res) => {
   const { postId } = req.params;
   try {
@@ -68,7 +75,7 @@ router.delete("/:postId", async (req, res) => {
         .json({ message: "You can delete only your posts" });
     }
 
-    await Post.findByIdAndDelete(postId); // Using findByIdAndDelete instead of remove
+    await Post.findByIdAndDelete(postId);
     res.json({ message: "Post deleted successfully" });
   } catch (error) {
     console.error("Error deleting post:", postId, error);
@@ -78,8 +85,7 @@ router.delete("/:postId", async (req, res) => {
   }
 });
 
-//like / dislike a post
-
+// Like / dislike a post
 router.put("/:id/like", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -95,8 +101,7 @@ router.put("/:id/like", async (req, res) => {
   }
 });
 
-//get a post
-
+// Get a post
 router.get("/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -106,8 +111,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-//get timeline posts
-
+// Get timeline posts
 router.get("/timeline/all", async (req, res) => {
   try {
     const currentUser = await User.findById(req.query.userId);
@@ -127,7 +131,7 @@ router.get("/timeline/all", async (req, res) => {
 // Add a comment to a post
 router.post("/:postId/comments", async (req, res) => {
   const { postId } = req.params;
-  const { userId, text } = req.body; // Assume these are passed in the request
+  const { userId, text } = req.body;
 
   try {
     const post = await Post.findById(postId);
@@ -144,15 +148,14 @@ router.post("/:postId/comments", async (req, res) => {
   }
 });
 
-// Get comments for a post might not be necessary if you're fetching them
-// together with the post but here's how you could do it
+// Get comments for a post
 router.get("/:postId/comments", async (req, res) => {
   const { postId } = req.params;
 
   try {
     const post = await Post.findById(postId).populate(
       "comments.userId",
-      "username"
+      "username profilePicture"
     );
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
@@ -165,10 +168,10 @@ router.get("/:postId/comments", async (req, res) => {
   }
 });
 
-// Delete a comment from a post
-router.delete("/:postId/comments/:commentId", async (req, res) => {
+// Edit a comment on a post
+router.put("/:postId/comments/:commentId", async (req, res) => {
   const { postId, commentId } = req.params;
-  const { userId } = req.body; // The ID of the user requesting the deletion
+  const { text, userId } = req.body;
 
   try {
     const post = await Post.findById(postId);
@@ -176,32 +179,105 @@ router.delete("/:postId/comments/:commentId", async (req, res) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
-    // Find the comment index
     const commentIndex = post.comments.findIndex(
       (comment) => comment._id.toString() === commentId
     );
 
-    // If the comment doesn't exist
     if (commentIndex === -1) {
       return res.status(404).json({ message: "Comment not found" });
     }
 
-    // Check if the requesting user is the comment owner
+    const comment = post.comments[commentIndex];
+
+    if (comment.userId.toString() !== userId) {
+      return res
+        .status(401)
+        .json({ message: "You can edit only your comments" });
+    }
+
+    comment.text = text;
+    comment.edited = true;
+
+    await post.save();
+    res.json({ message: "Comment updated successfully", comment });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error updating comment" });
+  }
+});
+
+// Delete a comment from a post
+router.delete("/:postId/comments/:commentId", async (req, res) => {
+  const { postId, commentId } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const commentIndex = post.comments.findIndex(
+      (comment) => comment._id.toString() === commentId
+    );
+
+    if (commentIndex === -1) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
     if (post.comments[commentIndex].userId.toString() !== userId) {
       return res
         .status(401)
         .json({ message: "You can delete only your comments" });
     }
 
-    // Remove the comment
     post.comments.splice(commentIndex, 1);
 
-    // Save the post
     await post.save();
     res.json({ message: "Comment deleted successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error deleting comment" });
+  }
+});
+
+// Add a like / dislike route for comments
+router.put("/:postId/comments/:commentId/like", async (req, res) => {
+  const { postId, commentId } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const commentIndex = post.comments.findIndex(
+      (comment) => comment._id.toString() === commentId
+    );
+
+    if (commentIndex === -1) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    const comment = post.comments[commentIndex];
+
+    if (!comment.likes) {
+      comment.likes = [];
+    }
+
+    if (!comment.likes.includes(userId)) {
+      comment.likes.push(userId);
+      res.status(200).json("The comment has been liked");
+    } else {
+      comment.likes = comment.likes.filter((id) => id !== userId);
+      res.status(200).json("The comment has been disliked");
+    }
+
+    await post.save();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to like/dislike comment" });
   }
 });
 

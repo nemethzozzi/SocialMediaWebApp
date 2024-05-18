@@ -8,8 +8,6 @@ const morgan = require("morgan");
 const userRoute = require("./routes/users");
 const authRoute = require("./routes/auth");
 const postRoute = require("./routes/posts");
-const notificationRoute = require("./routes/notifications");
-const searchRoute = require("./routes/users");
 const path = require("path");
 
 dotenv.config();
@@ -47,8 +45,6 @@ app.use(morgan("common"));
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
 app.use("/api/posts", postRoute);
-app.use("/api/notifications", notificationRoute);
-app.use("/api/search", searchRoute);
 
 // Serve static files
 app.use(

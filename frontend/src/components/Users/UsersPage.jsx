@@ -3,64 +3,55 @@ import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
-import { useFollow } from '../FollowContext'; //
-
+import { useFollow } from '../FollowContext';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
-  const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL; // Ensure the API URL is correctly set
-  const { followState, toggleFollow } = useFollow(); // Use the context
-
+  const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL;
+  const { followState, toggleFollow } = useFollow();
 
   useEffect(() => {
-    if (!user || !user._id) {
-      console.error("Current user ID is undefined. Please make sure the user is logged in and the correct user ID is stored.");
-      toast.error("You must be logged in to view this page.");
-      setLoading(false);
-      navigate('/login'); // Redirect to login page if not authenticated
-      return;
-    }
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get(`${apiUrl}/api/users?currentUserId=${user._id}`, {
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
+        const filteredUsers = response.data.filter(u => u._id !== user._id); // Filter out the current user
+        setUsers(filteredUsers);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        toast.error('Failed to fetch users');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    axios.get(`${apiUrl}/api/users?currentUserId=${user._id}`, {
-      headers: { Authorization: `Bearer ${user.token}` }
-    }).then(response => {
-      const filteredUsers = response.data.filter(u => u._id !== user._id); // Filter out the current user
-      setUsers(filteredUsers);
-      setLoading(false);
-    }).catch(error => {
-      console.error('Failed to fetch users:', error);
-      toast.error('Failed to fetch users');
-      setLoading(false);
-    });
-  }, [navigate, user, apiUrl]);
+    fetchUsers();
+  }, [user._id, user.token, apiUrl]);
 
   const handleFollowToggle = async (userIdToFollow, isCurrentlyFollowing) => {
     const endpoint = isCurrentlyFollowing ? 'unfollow' : 'follow';
 
-    if (userIdToFollow !== user._id) {
-      try {
-        await axios.put(`${apiUrl}/api/users/${userIdToFollow}/${endpoint}`, {
-          userId: user._id
-        }, {
-          headers: { Authorization: `Bearer ${user.token}` }
-        });
+    try {
+      await axios.put(`${apiUrl}/api/users/${userIdToFollow}/${endpoint}`, {
+        userId: user._id
+      }, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
 
-        toast.success(`User has been ${isCurrentlyFollowing ? 'unfollowed' : 'followed'}.`);
-        setUsers(users.map(u => {
-          if (u._id === userIdToFollow) {
-            return { ...u, isFollowing: !isCurrentlyFollowing };
-          }
-          return u;
-        }));
-      } catch (error) {
-        console.error(`Failed to ${endpoint} user:`, error?.response?.data?.message || error.message);
-        toast.error(`Failed to ${endpoint} user: ${error?.response?.data?.message || error.message}`);
-      }
-    } else {
-      toast.error('Operation not allowed.');
+      toast.success(`User has been ${isCurrentlyFollowing ? 'unfollowed' : 'followed'}.`);
+      setUsers(users.map(u => {
+        if (u._id === userIdToFollow) {
+          return { ...u, isFollowing: !isCurrentlyFollowing };
+        }
+        return u;
+      }));
+    } catch (error) {
+      console.error(`Failed to ${endpoint} user:`, error?.response?.data?.message || error.message);
+      toast.error(`Failed to ${endpoint} user: ${error?.response?.data?.message || error.message}`);
     }
   };
 
